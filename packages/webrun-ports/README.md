@@ -2,14 +2,14 @@
 
 The `@statewalker/webrun-ports` JavaScript library provides a set of utilities for making asynchronous calls, sending and receiving async iterators over MessageChannel Ports. 
 
-* [callPort](#callPort-method) - implements asynchronious port calls with timeout; (see the `listenPort` method)
+* [callPort](#callport-method) - implements asynchronious port calls with timeout; (see the `listenPort` method)
 * [errors](src/#errors) - contains serializeError/deserializeError methods transforming exceptions in JSON objects and restoring them back as Error instances 
 * index.js the main entry point for the library; re-exports all defined methods
-* [listenPort](#listenPort) - listens the specified port and delegates calls to  the registered handler; the methods are handled asynchronously and results delivered to the caller (see the `callPort` method)
-* [recieve](#recieve) - transforms a sequence of calls to the specified port to an AsyncIterator; Internally uses the `recieveIterator` method. On the other side the the `send` method used to send an iterator. 
-* [recieveIterator](#recieveIterator) - an adaptor method allowing to transform a sequence of calls to the `onMessage` method to an async iterator 
-* [send](#send) - sends the specified async iterator over the specified port; Internally uses the `sendIterator` method. On the other side the `recieve` method handles calls. 
-* [sendIterator](#sendIterator) - an utility method transforming an iterator to a sequence of calls to the registered handler.
+* [listenPort](#listenport-method) - listens the specified port and delegates calls to  the registered handler; the methods are handled asynchronously and results delivered to the caller (see the `callPort` method)
+* [recieve](#recieve-method) - transforms a sequence of calls to the specified port to an AsyncIterator; Internally uses the `recieveIterator` method. On the other side the the `send` method used to send an iterator. 
+* [recieveIterator](#recieveiterator-method) - an adaptor method allowing to transform a sequence of calls to the `onMessage` method to an async iterator 
+* [send](#send-method) - sends the specified async iterator over the specified port; Internally uses the `sendIterator` method. On the other side the `recieve` method handles calls. 
+* [sendIterator](#senditerator-method) - an utility method transforming an iterator to a sequence of calls to the registered handler.
 
 ## Methods
 
