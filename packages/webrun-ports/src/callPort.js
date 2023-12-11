@@ -1,5 +1,19 @@
 import { deserializeError } from './errors.js';
 
+/**
+ * Implements an asynchronous request/response pattern for communicating with a port.
+ * Calls a port with the specified parameters and returns a promise that resolves with the call result.
+ * This method is used in conjunction with the `listenPort` function.
+ *
+ * @param {MessagePort} port - The port to call.
+ * @param {Object} params - The parameters to pass to the port.
+ * @param {Object} options - The optional configuration options.
+ * @param {number} [options.timeout=1000] - The timeout duration in milliseconds.
+ * @param {string} [options.channelName=''] - The channel name for filtering messages.
+ * @param {Function} [options.log=console.log] - The logging function.
+ * @param {Function} [options.newCallId] - The function to generate a new call ID.
+ * @returns {Promise} A promise that resolves with the result of the port call.
+ */
 export default async function callPort(
   port,
   params,
