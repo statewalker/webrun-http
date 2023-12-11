@@ -1,4 +1,4 @@
 /* */
-import './channelSendRecieveTest.js'
-import './iteratorSendRecieveTest.js'
+import './channelSendRecieveTest.js';
+import './iteratorSendRecieveTest.js';
 // */
