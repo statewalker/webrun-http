@@ -1,6 +1,6 @@
 {
   "name": "@statewalker/webrun-ports",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Send/recieve calls or streams over MessageChannel Ports",
   "keywords": [],
   "homepage": "https://github.com/statewalker/webrun-ports",
@@ -53,7 +53,6 @@
     "prettier": "prettier src test --check",
     "prettier:fix": "yarn prettier -- --write",
     "format": "yarn prettier:fix && npm run lint:fix"
-
   },
   "sideEffects": false,
   "publishConfig": {
