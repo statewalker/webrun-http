@@ -2,7 +2,7 @@
 
 The `@statewalker/webrun-ports` JavaScript library provides a set of utilities for making asynchronous calls, sending and receiving async iterators over MessageChannel Ports. 
 
-* [callPort](#callPort) - implements asynchronious port calls with timeout; (see the `listenPort` method)
+* [callPort](#callPort-method) - implements asynchronious port calls with timeout; (see the `listenPort` method)
 * [errors](src/#errors) - contains serializeError/deserializeError methods transforming exceptions in JSON objects and restoring them back as Error instances 
 * index.js the main entry point for the library; re-exports all defined methods
 * [listenPort](#listenPort) - listens the specified port and delegates calls to  the registered handler; the methods are handled asynchronously and results delivered to the caller (see the `callPort` method)
@@ -11,7 +11,9 @@ The `@statewalker/webrun-ports` JavaScript library provides a set of utilities f
 * [send](#send) - sends the specified async iterator over the specified port; Internally uses the `sendIterator` method. On the other side the `recieve` method handles calls. 
 * [sendIterator](#sendIterator) - an utility method transforming an iterator to a sequence of calls to the registered handler.
 
-## `callPort`
+## Methods
+
+### `callPort` method
 
 This function calls the specified port with the given payload.
 - `port`: The name of the port to call.
@@ -22,22 +24,22 @@ Returns a promise that resolves when the port call is complete.
 
 This file contains the following methods:
 
-### `serializeError(error)`
+#### `serializeError(error)` method
 
 This method takes an error object and transforms it into a JSON object.
 
-### `deserializeError(json)`
+#### `deserializeError(json)` method
 
 This method takes a JSON object representing an error and restores it back as an Error instance.
 
-## `listenPort`
+### `listenPort` method
 
 This function listens to the specified port and delegates calls to the registered handler. The methods are handled asynchronously and results are delivered to the caller.
 
 - `port`: The name of the port to listen to.
 - `handler`: The handler function that will be called when a method is invoked on the port.
 
-## `recieveIterator`
+### `recieveIterator` method
 
 This function transforms a sequence of received messages from a specified port into an asynchronous iterator.
 
@@ -46,7 +48,7 @@ This function transforms a sequence of received messages from a specified port i
 
 Returns an asynchronous generator that yields received messages.
 
-## `send`
+### `send` method
 
 Sends data from an async iterator to a specified port.
 
@@ -56,7 +58,7 @@ Sends data from an async iterator to a specified port.
 
 Returns a promise that resolves when the data is received.
 
-## `sendIterator`
+### `sendIterator` method
 
 Sends values from an iterator to a specified function.
 
