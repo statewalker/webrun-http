@@ -1,6 +1,6 @@
 {
   "name": "@statewalker/webrun-ports",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Send/recieve calls or streams over MessageChannel Ports",
   "keywords": [],
   "homepage": "https://github.com/statewalker/webrun-ports",
