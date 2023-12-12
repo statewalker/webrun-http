@@ -3,9 +3,9 @@ import { serializeError } from './errors.js';
 /**
  * Listens to a specific port and handles incoming messages.
  * The result of the handler function is sent back to the port.
- * This function is used to implement the request/response pattern 
+ * This function is used to implement the request/response pattern
  * in conjunction with the `callPort` function.
- * 
+ *
  * Ths method returns a function to remove the event listener.
  *
  * @param {MessagePort} port - The port to listen to.

@@ -3,10 +3,10 @@ import listenPort from './listenPort.js';
 
 /**
  * This function transforms a sequence of received messages from a specified port
- * into an asynchronous iterator over iterators. 
- * Each returned value is an AsyncIterator providing access to individual series of 
+ * into an asynchronous iterator over iterators.
+ * Each returned value is an AsyncIterator providing access to individual series of
  * calls.
- * 
+ *
  * @param {MessagePort} port - The port number to listen to.
  * @param {Object} options - Additional options for receiving messages (optional).
  * @returns {AsyncGenerator<AsyncGenerator>} - An asynchronous generator that yields iterators.

@@ -1,6 +1,6 @@
 /**
  * Sends values from an iterator to a specified function.
- * 
+ *
  * @param {Function} send - The function sending values to the remote handlers.
  * @param {AsyncIterator} it - The iterator to send values from.
  * @returns {Promise<void>} - A promise that resolves when the iterator is fully consumed.

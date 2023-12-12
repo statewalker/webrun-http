@@ -1,4 +1,3 @@
-
 /**
  * Serializes an error object.
  *
