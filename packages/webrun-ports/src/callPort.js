@@ -28,7 +28,7 @@ export default async function callPort(
   log && log('[callPort]', { channelName, callId, params });
   let timerId, onMessage;
   const promise = new Promise((resolve, reject) => {
-    timerId = setTimeout(() => reject(new Error('Call timeout')), timeout);
+    timerId = setTimeout(() => reject(new Error(`Call timeout. CallId: "${callId}".` )), timeout);
     onMessage = (event) => {
       if (!event.data) return;
       if (event.data.channelName !== channelName) return;

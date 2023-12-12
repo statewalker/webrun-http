@@ -7,15 +7,17 @@ import { iterate } from '@statewalker/utils';
  * @returns {AsyncGenerator} An asynchronous generator that yields received values.
  */
 export default async function* recieveIterator(onMessage) {
-  yield* iterate((observer) => {
-    return onMessage(async ({ done = true, value, error } = {}) => {
-      if (error) {
-        await observer.error(error);
-      } else if (done) {
-        await observer.complete();
-      } else {
-        await observer.next(value);
-      }
-    });
+  let observer, cleanup = onMessage(async ({ done = true, value, error } = {}) => {
+    if (error) {
+      await observer.error(error);
+    } else if (done) {
+      await observer.complete();
+    } else {
+      await observer.next(value);
+    }
+  });
+  yield* iterate((o) => {
+    observer = o;
+    return cleanup;
   });
 }

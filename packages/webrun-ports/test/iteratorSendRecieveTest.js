@@ -16,9 +16,16 @@ async function* makeAsync(it, maxTimeout = 20) {
   }
 }
 
+function newMessageChannel() {
+  const channel = new MessageChannel();
+  channel.port1.start();
+  channel.port2.start();
+  return channel;
+}
+
 describe('sendIterator', () => {
   async function testAsyncCalls(dataToSend, control) {
-    const channel = new MessageChannel();
+    const channel = newMessageChannel();
     let calls = 0;
     let values = [];
     const close = listenPort(channel.port1, async ({ done, value }) => {
@@ -47,7 +54,7 @@ describe('sendIterator', () => {
 
 describe('recieveIterator', () => {
   async function testAsyncCalls(dataToSend, control) {
-    const channel = new MessageChannel();
+    const channel = newMessageChannel();
     let recieveMessage;
     const it = await recieveIterator((p) => (recieveMessage = p));
     const close = listenPort(channel.port1, async ({ done, value, error }) => {
@@ -83,16 +90,18 @@ describe('recieveIterator', () => {
 
 describe('send/recieve over a message port', () => {
   async function testAsyncCalls(dataToSend, control, channelName = '') {
-    const channel = new MessageChannel();
-    const input = recieve(channel.port1, { channelName });
+    const channel = newMessageChannel();
     (async () => {
       await send(channel.port2, dataToSend, { channelName });
     })();
 
     let values = [];
-    for await (let value of input) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      values.push(value);
+    for await (const input of recieve(channel.port1, { channelName })) {
+      for await (let value of input) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        values.push(value);
+      }
+      break;
     }
     expect(values).to.eql(control);
   }

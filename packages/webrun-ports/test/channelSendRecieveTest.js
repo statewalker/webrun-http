@@ -1,9 +1,16 @@
 import { default as expect } from 'expect.js';
 import { callPort, listenPort } from '../src/index.js';
 
+function newMessageChannel() {
+  const channel = new MessageChannel();
+  channel.port1.start();
+  channel.port2.start();
+  return channel;
+}
+
 describe('callPort/listenPort', () => {
   it(`should perform async calls over the port`, async () => {
-    const channel = new MessageChannel();
+    const channel = newMessageChannel();
     const close = listenPort(channel.port1, async (params) => {
       return params;
     });
@@ -13,7 +20,7 @@ describe('callPort/listenPort', () => {
   });
 
   it(`should rise an exception if the call takes too much time`, async () => {
-    const channel = new MessageChannel();
+    const channel = newMessageChannel();
     const close = listenPort(channel.port1, async (params) => {
       await new Promise((resolve) => setTimeout(resolve, 500));
       return params;
