@@ -3,7 +3,9 @@ import send from './send.js';
 
 /**
  * Handles streams of data comming from the port, handle them
- * and send back responses over the same port.
+ * and send back responses over the same port. This method yields 
+ * the counter with the number of requests (iterators) handled.
+ * 
  * This method is used as the server part, recieving the
  * request stream and replying to the caller.
  * Works in pair with the `ioSend` method.
