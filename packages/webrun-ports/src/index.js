@@ -1,7 +1,9 @@
+export { default as callBidi } from './callBidi.js';
 export { default as callPort } from './callPort.js';
 export * from './errors.js';
 export { default as ioHandle } from './ioHandle.js';
 export { default as ioSend } from './ioSend.js';
+export { default as listenBidi } from './listenBidi.js';
 export { default as listenPort } from './listenPort.js';
 export { default as recieve } from './recieve.js';
 export { default as recieveIterator } from './recieveIterator.js';
