@@ -15,8 +15,11 @@ import send from './send.js';
 export default async function* ioSend(port, output, options) {
   for await (const input of recieve(port, options)) {
     const promise = send(port, output, options);
-    yield* input;
-    await promise;
+    try {
+      yield* input;
+    } finally {
+      await promise;
+    }
     break;
   }
 }
