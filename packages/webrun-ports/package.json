@@ -48,7 +48,7 @@
     "rollup": "rollup -c",
     "test": "mocha -R spec ./test/index.js && yarn eslint",
     "prepublishOnly": "rm -rf dist && yarn test && yarn rollup",
-    "lint": "eslint src test",
+    "lint": "eslint src",
     "lint:fix": "yarn lint -- --fix",
     "prettier": "prettier src test --check",
     "prettier:fix": "yarn prettier -- --write",
