@@ -2,12 +2,15 @@ import callPort from './callPort.js';
 import ioSend from './ioSend.js';
 
 /**
- * Calls a bidirectional port with input and options.
+ * This method calls the peer handler over a port
+ * with a stream of input values and it returns the stream 
+ * of resulting values.
+ * 
  * This method internally creates a new channel and send it
  * to the peer with others parameters. The peer starts to
  * read the input stream and send results over this channel.
  *
- * @param {string} port - The port to call.
+ * @param {MessagePort} port - The port to call.
  * @param {any} input - The input to send to the peer.
  * @param {object} args - The arguments object containing call parameters.
  * @param {object} args.options - The call options for the port call:
