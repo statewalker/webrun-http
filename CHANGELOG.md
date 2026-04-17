@@ -1,2 +1,2 @@
-# @statewalker/webrun-http
+# @statewalker/webrun-wire-monorepo
 

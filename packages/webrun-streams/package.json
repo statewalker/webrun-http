@@ -4,7 +4,7 @@
   "private": false,
   "type": "module",
   "description": "Tiny async-iterator / ReadableStream primitives: backpressure generator, chunk protocol, serialisable errors",
-  "homepage": "https://github.com/statewalker/webrun-http",
+  "homepage": "https://github.com/statewalker/webrun-wire",
   "author": {
     "name": "Mikhail Kotelnikov",
     "email": "mikhail.kotelnikov@gmail.com"
@@ -12,7 +12,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:statewalker/webrun-http.git",
+    "url": "git@github.com:statewalker/webrun-wire.git",
     "directory": "packages/webrun-streams"
   },
   "main": "./dist/index.js",

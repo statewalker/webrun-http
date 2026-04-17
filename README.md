@@ -1,15 +1,15 @@
-# webrun-http
+# webrun-wire
 
-**Run real HTTP servers in a browser tab, over a MessagePort, over a
-WebSocket, or over anything else that can move bytes — with no backend
-and no network round-trip.**
+**Move `Request`, `Response`, and async iterators over any byte channel —
+MessagePort, WebSocket, ServiceWorker, in-process pipe, real HTTP —
+with the same handler code on both ends.**
 
-`webrun-http` is a pnpm workspace that builds up, layer by layer, the
-ability to write ordinary `(Request) ⇒ Response` handlers and answer
-standard `fetch()` calls without ever hitting the network. The "server"
-runs in the same tab, in a sibling tab, inside a relay iframe, behind a
-MessagePort, or over a WebSocket — the handler doesn't know the
-difference.
+`webrun-wire` is a pnpm workspace that builds up, layer by layer, the
+ability to write ordinary `(Request) ⇒ Response` handlers and RPC
+service objects and run them anywhere bytes can flow. The "server" can
+live in the same tab, in a sibling tab, inside a relay iframe, behind a
+MessagePort, over a WebSocket, or on a real HTTP endpoint — callers use
+standard `fetch()` and don't know the difference.
 
 ## Why it exists
 

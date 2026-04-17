@@ -4,7 +4,7 @@
   "private": false,
   "type": "module",
   "description": "MessagePort utilities: request/response with timeout, async-iterator streams, and bidirectional calls",
-  "homepage": "https://github.com/statewalker/webrun-ports",
+  "homepage": "https://github.com/statewalker/webrun-wire",
   "author": {
     "name": "Mikhail Kotelnikov",
     "email": "mikhail.kotelnikov@gmail.com"
@@ -12,7 +12,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git@github.com:statewalker/webrun-ports.git"
+    "url": "git@github.com:statewalker/webrun-wire.git"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
