@@ -62,6 +62,9 @@ webrun-streams        (foundation — iterator + stream + error primitives)
     │       ├── webrun-http-browser   (ServiceWorker hosting, relay mode)
     │       └── webrun-rpc-http       (service-RPC on top of webrun-http)
     │
+    ├── webrun-site-builder       (files + endpoints + auth → (Request)⇒Response)
+    │       (peer: @statewalker/webrun-files for the FilesApi interface)
+    │
     └── (all of the above use webrun-streams for chunks + errors)
 ```
 
@@ -168,6 +171,27 @@ to whichever transport fits the deployment.
 
 Depends on `@statewalker/webrun-streams` for error serialization.
 
+### [`@statewalker/webrun-site-builder`](./packages/webrun-site-builder)
+
+**Compose a `(Request) ⇒ Response` site** from three ingredients:
+static files mounted from any `FilesApi` (memory / Node FS / S3 /
+browser FSAA / composite), dynamic endpoints with URLPattern-based
+routing, and pluggable auth hooks (ships with an HTTP basic-auth
+factory):
+
+```ts
+new SiteBuilder()
+  .setFiles("/", files)
+  .setAuth("/admin/*", newBasicAuth({ tom: "!jerry!" }))
+  .setEndpoint("/api/todo/:id", "GET", handler)
+  .build(); // ⇒ (Request) ⇒ Response
+```
+
+The builder is deliberately framework-free: URLPattern for routing,
+a small MIME map, `Range`/`HEAD` support driven by
+`FilesApi.stats()` + `read({start, length})`. Zero runtime deps
+beyond a peer `@statewalker/webrun-files`.
+
 ## Putting it together
 
 The packages are designed to compose into end-to-end stacks. A few
@@ -177,6 +201,7 @@ concrete combinations:
 | --- | --- |
 | In-browser service RPC with offline-capable `fetch()` | `webrun-rpc-http` + `webrun-http-browser` (same-origin mode) + `webrun-http` |
 | Cross-origin RPC from an embed (Observable, unpkg) | `webrun-rpc-http` + `webrun-http-browser` (relay mode) + `webrun-http` |
+| Static site + dynamic API + auth, served from anywhere | `webrun-site-builder` + any `FilesApi` + a transport of your choice |
 | Node ↔ browser RPC over a WebSocket | `webrun-ports` + `webrun-ports-ws` on each end; optionally pipe `webrun-http` through for `Request`/`Response` semantics |
 | Unit tests for an RPC service | `webrun-rpc-http` with `fetch: (req) => handler(req)` — no network at all |
 | Deploying the same handler to a real edge runtime | `webrun-rpc-http` handler drops straight into Deno / Cloudflare Workers / Bun |
