@@ -33,6 +33,9 @@
     "lint": "biome check src tests",
     "prepublishOnly": "pnpm run build"
   },
+  "dependencies": {
+    "@statewalker/webrun-streams": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "rimraf": "catalog:",

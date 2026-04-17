@@ -1,10 +1,9 @@
+import { recieveIterator, sendIterator } from "@statewalker/webrun-streams";
 import { describe, expect, it } from "vitest";
 import { callPort } from "../src/call-port.js";
 import { listenPort } from "../src/listen-port.js";
 import { recieve } from "../src/recieve.js";
-import { recieveIterator } from "../src/recieve-iterator.js";
 import { send } from "../src/send.js";
-import { sendIterator } from "../src/send-iterator.js";
 
 async function* makeAsync<T>(items: Iterable<T>, maxTimeout = 20): AsyncGenerator<T> {
   for (const value of items) {

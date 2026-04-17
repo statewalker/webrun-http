@@ -1,5 +1,5 @@
+import { sendIterator } from "@statewalker/webrun-streams";
 import { type CallPortOptions, callPort } from "./call-port.js";
-import { sendIterator } from "./send-iterator.js";
 
 /**
  * Send every value produced by `output` to `port`, one `callPort` round-trip

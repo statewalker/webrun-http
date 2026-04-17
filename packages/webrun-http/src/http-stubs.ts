@@ -1,4 +1,4 @@
-import { fromReadableStream, toReadableStream } from "./readable-streams.js";
+import { fromReadableStream, toReadableStream } from "@statewalker/webrun-streams";
 
 export interface SerializedHttpRequest {
   url: string;

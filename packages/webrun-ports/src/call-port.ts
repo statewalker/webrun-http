@@ -1,4 +1,4 @@
-import { deserializeError, type SerializedError } from "./errors.js";
+import { deserializeError, type SerializedError } from "@statewalker/webrun-streams";
 
 export interface CallPortOptions {
   /** Timeout in ms after which the call rejects (default 1000). */

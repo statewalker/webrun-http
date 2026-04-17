@@ -1,5 +1,10 @@
-import { recieveData, sendData } from "./data-send-recieve.js";
-import { deserializeError, type SerializedError, serializeError } from "./errors.js";
+import {
+  deserializeError,
+  recieveIterator,
+  type SerializedError,
+  sendIterator,
+  serializeError,
+} from "@statewalker/webrun-streams";
 import type { MessageTarget } from "./message-target.js";
 
 const MESSAGE_TYPE_REQUEST = "REQUEST";
@@ -193,17 +198,17 @@ function newStreamChannel<T>(port: MessageTarget): StreamChannel<T> {
   };
 
   async function* recieveAll(): AsyncGenerator<T, void, unknown> {
-    yield* recieveData<T>((listener) => {
-      listeners.push(listener as DataListener);
+    yield* recieveIterator<T>((deliver) => {
+      listeners.push(deliver as DataListener);
       return () => {
-        listeners = listeners.filter((l) => l !== listener);
+        listeners = listeners.filter((l) => l !== deliver);
       };
     });
   }
 
   async function sendAll(it: AsyncIterable<T>): Promise<void> {
-    await sendData<T>(
-      (msg) => void channel.invoke(msg),
+    await sendIterator<T>(
+      (chunk) => void channel.invoke(chunk),
       (async function* () {
         try {
           iterators.push(it);

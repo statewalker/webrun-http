@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@statewalker/webrun-http": "workspace:*",
+    "@statewalker/webrun-streams": "workspace:*",
     "idb-keyval": "^6.2.1"
   },
   "devDependencies": {

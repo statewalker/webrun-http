@@ -1,4 +1,4 @@
-import { serializeError } from "./errors.js";
+import { serializeError } from "@statewalker/webrun-streams";
 
 export interface ListenPortOptions {
   /** Channel name filter — ignore messages whose `channelName` doesn't match. */

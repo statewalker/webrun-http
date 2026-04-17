@@ -1,4 +1,4 @@
-import { deserializeError, serializeError } from "./errors.js";
+import { deserializeError, serializeError } from "@statewalker/webrun-streams";
 import type { MessageSink, MessageSource } from "./message-target.js";
 
 export type ChannelCallHandler = (

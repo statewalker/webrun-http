@@ -40,6 +40,18 @@ Typical use cases:
 
 ## Packages
 
+### [`@statewalker/webrun-streams`](./packages/webrun-streams)
+
+Tiny async-iterator and `ReadableStream` primitives:
+`newAsyncGenerator` (backpressure-aware queue generator),
+`sendIterator` / `recieveIterator` (chunk protocol for shipping an
+iterator across any transport), `toReadableStream` /
+`fromReadableStream` (WHATWG ↔ async iterator), plus
+`serializeError` / `deserializeError`. Zero runtime deps.
+
+The common foundation — every other package in the workspace depends
+on it.
+
 ### [`@statewalker/webrun-ports`](./packages/webrun-ports)
 
 MessagePort utilities: request/response with timeout (`callPort` /

@@ -1,6 +1,5 @@
+import { type IteratorChunk, recieveIterator } from "@statewalker/webrun-streams";
 import { type ListenPortOptions, listenPort } from "./listen-port.js";
-import { recieveIterator } from "./recieve-iterator.js";
-import type { IteratorChunk } from "./send-iterator.js";
 
 /**
  * Async generator over async generators. Each outer yield is one inbound

@@ -1,6 +1,6 @@
+import { toReadableStream } from "@statewalker/webrun-streams";
 import { describe, expect, it } from "vitest";
 import { newHttpClient, newHttpServer } from "../src/http-send-recieve.js";
-import { toReadableStream } from "../src/readable-streams.js";
 
 describe("newHttpServer + newHttpClient", () => {
   it("end-to-end GET roundtrip in one process", async () => {
