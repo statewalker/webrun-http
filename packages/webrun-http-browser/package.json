@@ -44,6 +44,10 @@
     "build": "rimraf dist && rolldown -c && tsc --emitDeclarationOnly --declaration",
     "test": "vitest run",
     "lint": "biome check src tests",
+    "serve": "http-server -p 5173 -c-1 -s .",
+    "example:same-origin": "pnpm run build && http-server -p 5173 -c-1 -o /public/index.html .",
+    "example:relay-site": "pnpm run build && http-server -p 5173 -c-1 -o /demo/demo-1.html .",
+    "example:relay-files": "pnpm run build && http-server -p 5173 -c-1 -o /demo/demo-2.html .",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -51,6 +55,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "http-server": "^14.1.1",
     "rimraf": "catalog:",
     "rolldown": "catalog:",
     "typescript": "catalog:",

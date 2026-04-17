@@ -127,10 +127,21 @@ See [`public/`](./public) for a complete example.
 ## Scripts
 
 ```sh
-pnpm test              # vitest run
-pnpm run build         # rolldown + tsc --emitDeclarationOnly
-pnpm lint              # biome check
+pnpm test                      # vitest run
+pnpm run build                 # rolldown + tsc --emitDeclarationOnly
+pnpm lint                      # biome check
+
+# Run the examples locally (each script builds first, starts a static
+# server on :5173, and opens the target page in the default browser):
+pnpm run example:same-origin   # public/index.html      — sw/ mode demo
+pnpm run example:relay-site    # demo/demo-1.html       — relay-mode dynamic site
+pnpm run example:relay-files   # demo/demo-2.html       — relay-mode local FS browser
+
+pnpm run serve                 # just start the static server (no browser)
 ```
+
+ServiceWorkers only register over `http://localhost` or HTTPS, so open the
+pages through `http://localhost:5173/…` rather than `file://`.
 
 ## License
 
