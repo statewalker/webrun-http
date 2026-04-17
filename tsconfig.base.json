@@ -12,7 +12,8 @@
     "declarationMap": true,
     "baseUrl": ".",
     "paths": {
-      "@statewalker/webrun-http-browser": ["packages/webrun-http-browser/src"]
+      "@statewalker/webrun-http-browser": ["packages/webrun-http-browser/src"],
+      "@statewalker/webrun-http-browser/sw": ["packages/webrun-http-browser/src/sw"]
     }
   }
 }

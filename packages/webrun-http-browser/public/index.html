@@ -1,100 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>webrun-http-browser — same-origin demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 48rem; }
+      h1 { margin-top: 0; }
+      pre { background: #f4f4f5; padding: 0.5rem 1rem; border-radius: 0.25rem; overflow: auto; }
+      .log { border: 1px solid #e5e5e5; padding: 0.5rem 1rem; min-height: 4rem; }
+      .log p { margin: 0.25rem 0; font-family: monospace; }
+    </style>
+  </head>
+  <body>
+    <h1>Same-origin ServiceWorker HTTP demo</h1>
+    <p>
+      This page registers a ServiceWorker at <code>./sw-worker.js</code> and
+      mounts a tiny in-browser HTTP handler under <code>./api/</code>. The SW
+      then intercepts same-origin <code>fetch()</code> calls matching that
+      prefix and routes them to the handler — no remote server involved.
+    </p>
+    <div class="log" id="log"></div>
 
-<head>
-  <meta charset='utf-8'>
-  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-  <title>Page Title</title>
-  <meta name='viewport' content='width=device-width, initial-scale=1'>
-</head>
+    <script type="module">
+      import { createLocalAdapter } from "./index.js";
 
-<body>
-  <div id="info"></div>
-  <div id="messages" style="display: block; border: 1px solid blue; padding: 0.5em;"></div>
-  <div id="counter"></div>
-
-  <button id="button">Load Data</button>
-  <div id="panel"></div>
-
-  <script type="module">
-    import { v4 as uuidv4 } from "https://unpkg.com/uuid@9.0.0/dist/esm-browser/index.js";
-    import * as relayLib from "../dist/index.js";
-    import { callPeriodically } from "../public-relay/heartbeat.js";
-
-    document.addEventListener("DOMContentLoaded", main);
-    // Promise.resolve().then(main).catch(console.error);
-
-    async function main() {
-
-      const key = uuidv4();
-      const [register, cleanup] = relayLib.newRegistry();
-
-      const options = {
-        // url: new URL(`../public-relay/relay.html?${Math.random()}`, import.meta.url),
-        // container: document.body,
+      const log = (msg) => {
+        const p = document.createElement("p");
+        p.textContent = msg;
+        document.querySelector("#log").appendChild(p);
       };
-      const serviceKey = "abc";
 
-      // ---------------------------
-      // Server-side part 
-      const serverPort = await relayLib.newRemoteRelayChannel(options);
-      register(serverPort.close);
+      // The adapter key is also the first URL segment the SW routes to this page;
+      // registered handler prefixes must live under `<key>/…`.
+      const KEY = "demo";
+      const adapter = createLocalAdapter({ key: KEY });
+      try {
+        await adapter.start();
+        log("ServiceWorker activated.");
 
-      const serviceHandler = async (request) => {
-        const info = relayLib.splitServiceUrl(request.url);
+        const { baseUrl } = await adapter.register(`${KEY}/api/`, async (request) => {
+          const url = new URL(request.url);
+          return new Response(
+            JSON.stringify({
+              message: "Hello from the in-browser HTTP handler!",
+              at: url.pathname,
+              time: new Date().toISOString(),
+            }),
+            { headers: { "Content-Type": "application/json" } },
+          );
+        });
+        log(`Handler registered at ${baseUrl}`);
 
-        const result = {
-          message: "Hello Wonderful World!",
-          ...info
-        }
-        return new Response(JSON.stringify(result, null, 2), {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        })
-      };
-      register(await relayLib.initHttpService(serviceHandler, {
-        key: serviceKey,
-        port: serverPort.port
-      }))
-
-      // ---------------------------
-      // Call the defined endpoint. 
-
-      // We can not use the "fech" method - to be able
-      // to use it this page should be served from the same root URL
-      // as the service worker managing pages. 
-      // To deal with this constraint we use the connection
-      // port allowing to perform direct calls using
-      // the explicit service key on the client.
-      const clientPort = await relayLib.newRemoteRelayChannel(options);
-      register(clientPort.close);
-
-      const request = new Request(`http://www.foo.bar/titi/toto`);
-      const response = await relayLib.callHttpService(request, {
-        key: serviceKey,
-        port: clientPort.port
-      });
-      const json = await response.json();
-      console.log('* Response:', json);
-
-
-      // // ---------------------------
-      // // Start hearbeting calls - to avoid removal of the underlying ServiceWorker
-      // // const url = new URL(`../public-relay/~.ping`, import.meta.url);
-      // register(callPeriodically(async () => {
-      //   const response = await relayLib.callHttpService(new Request("~sys/ping/"), {
-      //     key: serviceKey,
-      //     port: clientPort.port
-      //   })
-      //   const result = await response.json();
-      //   console.log(result);
-      // }, 10000))
-
-    }
-
-  </script>
-
-</body>
-
+        const res = await fetch(`${baseUrl}anything`);
+        const body = await res.json();
+        log(`GET ${baseUrl}anything → ${JSON.stringify(body)}`);
+      } catch (error) {
+        log(`Error: ${error.message}`);
+        console.error(error);
+      }
+    </script>
+  </body>
 </html>

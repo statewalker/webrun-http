@@ -5,19 +5,20 @@ export function startHeartbit({
   url = "./ping", // 10 seconds
 }) {
   return callPeriodically(async () => {
-    const res = await fetch(url);
+    const _res = await fetch(url);
   }, timeout);
 }
 
 export async function callPeriodically(action, timeout) {
-  let timerId, stopped = false;
+  let timerId,
+    stopped = false;
   async function run() {
     try {
       await action();
     } catch (err) {
       console.error(err);
     }
-    timerId = (!stopped) ? workerTimer.setTimeout(run, timeout) : 0;
+    timerId = !stopped ? workerTimer.setTimeout(run, timeout) : 0;
   }
   run();
   return () => {

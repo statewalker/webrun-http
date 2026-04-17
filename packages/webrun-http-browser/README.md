@@ -1,73 +1,137 @@
 # @statewalker/webrun-http-browser
 
-This module simulates HTTP server using Service Workers.
-It allows to develop, test, run and debug server-side code directly in the browser.
-After that the same code can be deployed in Deno / Deno Deploy / Cloudflare / Node JS environments (with adapters).
+ServiceWorker-based HTTP server for browsers. Register request handlers in
+JavaScript, call them with `fetch()` and standard `Request` / `Response`
+objects — no network round-trip, no external server.
 
-## Demo
+Runs in two modes:
 
-* [https://observablehq.com/@kotelnikov/webrun-http-service](https://observablehq.com/@kotelnikov/webrun-http-service) - an Observable page demonstrating how it works. You can play with the code here.
-* [Demo 1](https://unpkg.com/@statewalker/webrun-http-browser@0.3/demo/demo-1.html) - a dynamic web site with a server-side API, a HTML page and a CSS file
-* [Demo 2](https://unpkg.com/@statewalker/webrun-http-browser@0.3/demo/demo-2.html) - a virtual file server exposing your local disk content
+- **Same-origin (`./sw`)** — your app registers its own ServiceWorker and
+  mounts handlers next to the page. Minimal setup, strict same-origin
+  constraint.
+- **Relay (default entry)** — a ServiceWorker running at a shared *relay*
+  origin (e.g. a CDN) serves requests on behalf of any page that embeds a
+  hidden relay iframe. Cross-origin friendly — works from Observable,
+  notebooks, third-party hosts, etc.
 
-## Features 
+## Installation
 
-This module provides a lightweight full-stack development environment in the browser:
-* Code, execute and debug the whole stack in the browser. Even without internet connection.
-* Your data and code don’t leave your browser
-* Instant reproducable environment without installation
-* Easily embeddable in your code
-* Client and server-side code in the browser based on standards:
-  - Use module imports for scripts 
-  - Send requests with fetch
-  - Handle HTTP queries with the Request/Response API
-
-
-## UseCases
-
-* Create rich documentations, tutorials, demos
-* Embed in your rich application - in the new generation Notion, Airtable or Figma
-* Deliver self-contained prototype environments to your clients
-
-## How It Works
-
-The core of this module is based on the following native browser technologies: ServiceWorker and MessageChannels.
-
-A ServiceWorker is used as the "server", intercepting HTTP calls and delegating their handling to registered modules via MessageChannels. 
-So in the same browser-based application you can register a standard HTTP endpoint and call it. 
-
-Example:
-```js
-import { httpService, endpointUrl } from "...";
-
-// Server-side code:
-httpService.register(async (request) => { // request: Request
-  return new Response("Hello, world!", {
-    headers: {
-      "Content-Type": "text/plain"
-    }
-  })
-})
-
-// Client-side code:
-
-const res = await fetch(endpointUrl);
-const text = await res.text();
-console.log(text);
-
+```sh
+npm install @statewalker/webrun-http-browser
 ```
 
-## They Play Well Together...
+## Architecture
 
-This in-browser HTTP Server allows to implement the following functionalities:
-- Serve your content from your Local Disk:
-  - using [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
-  - using [Origin Private File System API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API)
-- Add version control with Git - using [IsomorphicGit](https://isomorphic-git.org/)
-- Provide direct P2P sharing with others – via [WebRTC](https://webrtc.org/)
-- Implement client/server applications using persistent SQLite on Origin Private File System - using [SQLite Wasm](https://developer.chrome.com/blog/sqlite-wasm-in-the-browser-backed-by-the-origin-private-file-system/)
-- Deploy your local site on Edge - via [Deno Deploy](https://deno.com/deploy)
-- Distribute your work in any browser via IPFS / [LibP2P](https://github.com/libp2p/js-libp2p)
-- Integration with existing powerful APIs like https://trpc.io/
+```
+src/
+├── core/                    ┐
+│   ├── data-calls.ts        │  Primitives: one-shot and streaming
+│   ├── data-channels.ts     │  message-channel calls, backpressure,
+│   ├── data-send-recieve.ts │  error (de)serialisation.
+│   ├── errors.ts            │
+│   ├── iterate.ts           │
+│   ├── message-target.ts    │
+│   └── registry.ts          ┘
+├── http/                    ┐
+│   ├── http-error.ts        │  HTTP layer: Request/Response
+│   ├── http-send-recieve.ts │  (de)serialisation over streaming
+│   ├── http-stubs.ts        │  channels, ReadableStream helpers.
+│   └── readable-streams.ts  ┘
+├── sw/                      ┐
+│   ├── sw-dispatcher.ts     │  Same-origin path:
+│   └── http-sw-dispatcher.ts│  SwHttpAdapter (page) / SwHttpDispatcher (SW).
+│                            ┘
+├── relay/                   ┐
+│   ├── index.ts             │  Relay path:
+│   ├── index-sw.ts          │  newRemoteRelayChannel, initHttpService,
+│   └── split-service-url.ts │  callHttpService, relay SW.
+│                            ┘
+├── index.ts                 — main entry: core + http + relay
+├── sw.ts                    — `./sw` subpath entry (same-origin path)
+├── relay-sw.ts              — bootstraps the relay SW (served as a SW script)
+└── sw-worker.ts             — bootstraps the same-origin SW (ditto)
+```
 
-...and everything in the browser!
+## Relay mode (cross-origin)
+
+Your page ↔ relay iframe ↔ relay ServiceWorker. The relay SW claims URLs
+shaped `<relay-origin>/~<service-key>/...` and forwards each request to the
+page that registered that `key`.
+
+```ts
+import {
+  newRemoteRelayChannel,
+  initHttpService,
+  callHttpService,
+} from "@statewalker/webrun-http-browser";
+
+// 1. Embed a relay iframe and open a MessagePort into its ServiceWorker.
+const connection = await newRemoteRelayChannel({
+  url: new URL("https://my-relay.example/public-relay/relay.html"),
+});
+
+// 2. Register a handler for service "FS".
+const baseUrl = `${connection.baseUrl}~FS`;
+await initHttpService(
+  async (request) => new Response(`Hello ${new URL(request.url).pathname}`),
+  { key: "FS", port: connection.port },
+);
+
+// 3a. Any browser tab loading the service URL is now served by your handler:
+await fetch(`${baseUrl}/anything`);
+
+// 3b. ...or call it directly through the same port (bypassing `fetch`):
+const res = await callHttpService(
+  new Request(`${baseUrl}/anything`),
+  { key: "FS", port: connection.port },
+);
+```
+
+See [`demo/demo-1.html`](./demo/demo-1.html) and
+[`demo/demo-2.html`](./demo/demo-2.html) for full examples (an in-browser
+dynamic site with Hono routing, and a local-filesystem browser).
+
+## Same-origin mode
+
+Your page registers its own ServiceWorker and attaches handlers locally.
+
+```ts
+import { SwHttpAdapter } from "@statewalker/webrun-http-browser/sw";
+
+const KEY = "demo"; // also the first URL segment the SW routes here
+const adapter = new SwHttpAdapter({
+  key: KEY,
+  serviceWorkerUrl: new URL("./sw-worker.js", import.meta.url).toString(),
+});
+await adapter.start();
+
+const { baseUrl } = await adapter.register(`${KEY}/api/`, async (request) => {
+  return new Response(JSON.stringify({ now: Date.now() }), {
+    headers: { "Content-Type": "application/json" },
+  });
+});
+
+// fetch("/path-to-page/demo/api/anything") is intercepted by the SW.
+```
+
+The SW script itself is provided by the package — a tiny loader in your
+app's directory re-exports it so the SW scope covers your app:
+
+```js
+// public/sw-worker.js — served next to your app pages.
+importScripts("/path/to/node_modules/@statewalker/webrun-http-browser/dist/sw-worker.js");
+```
+
+See [`public/`](./public) for a complete example.
+
+## Scripts
+
+```sh
+pnpm test              # vitest run
+pnpm run build         # rolldown + tsc --emitDeclarationOnly
+pnpm lint              # biome check
+```
+
+## License
+
+MIT © statewalker
