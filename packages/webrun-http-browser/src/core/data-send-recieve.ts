@@ -1,18 +1,24 @@
-import { iterate } from "./iterate.js";
+import { newAsyncGenerator } from "./new-async-generator.js";
 
 export type DataMessage<T> = { done?: boolean; value?: T; error?: unknown };
 export type DataSender<T> = (msg: DataMessage<T>) => void | Promise<void>;
 
-export async function* recieveData<T>(
+export function recieveData<T>(
   onMessage: (listener: (msg?: DataMessage<T>) => Promise<boolean>) => (() => unknown) | undefined,
-): AsyncGenerator<T, void, unknown> {
-  yield* iterate<T>((iterator) => {
-    return onMessage(async (msg = { done: true }) => {
-      const { done = true, value, error } = msg;
-      if (error) return await iterator.error(error);
-      if (done) return await iterator.complete();
-      return await iterator.next(value as T);
+): AsyncGenerator<T> {
+  return newAsyncGenerator<T>((next, done) => {
+    const unsubscribe = onMessage(async (msg = { done: true }) => {
+      const { done: isDone = true, value, error } = msg;
+      if (error) return await done(error as Error);
+      if (isDone) return await done();
+      return await next(value as T);
     });
+    if (unsubscribe) {
+      return () => {
+        unsubscribe();
+      };
+    }
+    return undefined;
   });
 }
 
