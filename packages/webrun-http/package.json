@@ -1,55 +1,44 @@
 {
   "name": "@statewalker/webrun-http",
   "version": "0.0.1",
-  "description": "Transform HTTP Request/Response objects into AsyncIterators",
-  "keywords": [],
+  "private": false,
+  "type": "module",
+  "description": "Transport-agnostic HTTP Request/Response streaming over async iterators",
   "homepage": "https://github.com/statewalker/webrun-http",
   "author": {
     "name": "Mikhail Kotelnikov",
     "email": "mikhail.kotelnikov@gmail.com"
   },
   "license": "MIT",
-  "type": "module",
-  "files": [
-    "dist/**/package.json",
-    "dist/**/*.js",
-    "src/**/*.js",
-    "index.js"
-  ],
-  "module": "src/index.js",
-  "main": "src/index.js",
-  "jsdelivr": "dist/index.js",
-  "unpkg": "dist/index.js",
-  "exports": {
-    "umd": "./dist/index-umd.min.js",
-    "default": "./src/index.js"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "@statewalker/rollup": "^0.1.6",
-    "eslint": "^8.55.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-prettier": "^5.0.1",
-    "expect.js": "^0.3",
-    "mocha": "^10",
-    "prettier": "^3.1.1",
-    "rollup": "^3"
-  },
   "repository": {
     "type": "git",
     "url": "git@github.com:statewalker/webrun-http.git"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "eslint": "eslint src",
-    "rollup": "rollup -c",
-    "test": "mocha -R spec ./test/index.js && yarn eslint",
-    "prepublishOnly": "rm -rf dist && yarn test && yarn rollup",
-    "lint": "eslint src test",
-    "lint:fix": "yarn lint -- --fix",
-    "prettier": "prettier src test --check",
-    "prettier:fix": "yarn prettier -- --write",
-    "format": "yarn prettier:fix && npm run lint:fix"
+    "build": "rimraf dist && rolldown -c && tsc --emitDeclarationOnly --declaration",
+    "test": "vitest run",
+    "lint": "biome check src tests",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "rolldown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "sideEffects": false,
   "publishConfig": {

@@ -4,6 +4,17 @@ HTTP utilities for the webrun ecosystem — pnpm workspace monorepo.
 
 ## Packages
 
+### [`@statewalker/webrun-http`](./packages/webrun-http)
+
+Transport-agnostic `Request` / `Response` streaming over async iterators.
+Two layers: **stubs** that (de)serialise HTTP envelopes against any
+`(envelope) ⇒ envelope` transport, and **pipes** that express a server as
+`AsyncIterable<Uint8Array> ⇒ AsyncIterable<Uint8Array>`.
+
+Useful when you want to move HTTP semantics across a non-HTTP channel
+(MessagePort, WebSocket, IPC, in-memory) without caring how the bytes
+actually move.
+
 ### [`@statewalker/webrun-http-browser`](./packages/webrun-http-browser)
 
 ServiceWorker-based HTTP server that runs entirely in the browser. Register
