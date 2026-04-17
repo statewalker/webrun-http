@@ -16,6 +16,7 @@
       "@statewalker/webrun-http-browser/sw": ["./packages/webrun-http-browser/src/sw"],
       "@statewalker/webrun-ports": ["./packages/webrun-ports/src"],
       "@statewalker/webrun-ports-ws": ["./packages/webrun-ports-ws/src"],
+      "@statewalker/webrun-rpc-http": ["./packages/webrun-rpc-http/src"],
       "@statewalker/webrun-streams": ["./packages/webrun-streams/src"]
     }
   }
