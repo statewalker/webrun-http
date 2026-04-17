@@ -40,6 +40,16 @@ Typical use cases:
 
 ## Packages
 
+### [`@statewalker/webrun-ports`](./packages/webrun-ports)
+
+MessagePort utilities: request/response with timeout (`callPort` /
+`listenPort`), async-iterator streams (`send` / `recieve`), and
+full-duplex calls (`callBidi` / `listenBidi`) — all multiplexed over a
+single `MessagePort` via a `channelName` tag. Zero runtime dependencies.
+
+The narrow-waist transport anything in this repo builds on when two
+endpoints can move `postMessage` envelopes but nothing else.
+
 ### [`@statewalker/webrun-http`](./packages/webrun-http)
 
 Transport-agnostic `Request` / `Response` streaming over async iterators.

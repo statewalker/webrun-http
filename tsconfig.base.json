@@ -10,11 +10,11 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": ".",
     "paths": {
-      "@statewalker/webrun-http": ["packages/webrun-http/src"],
-      "@statewalker/webrun-http-browser": ["packages/webrun-http-browser/src"],
-      "@statewalker/webrun-http-browser/sw": ["packages/webrun-http-browser/src/sw"]
+      "@statewalker/webrun-http": ["./packages/webrun-http/src"],
+      "@statewalker/webrun-http-browser": ["./packages/webrun-http-browser/src"],
+      "@statewalker/webrun-http-browser/sw": ["./packages/webrun-http-browser/src/sw"],
+      "@statewalker/webrun-ports": ["./packages/webrun-ports/src"]
     }
   }
 }

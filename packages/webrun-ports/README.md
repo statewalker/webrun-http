@@ -1,173 +1,225 @@
 # @statewalker/webrun-ports
 
+MessagePort utilities: request/response with timeout, async-iterator
+streams, and full-duplex bidirectional calls — all over a single
+`MessagePort`.
 
-The `@statewalker/webrun-ports` JavaScript library offers a set of utilities designed for handling asynchronous calls and managing the exchange of data streams through `MessageChannel` Ports.
+## Why it exists
 
-This library enables the initiation of calls and receipt of responses across bidirectional channels, utilizing `MessagePort` instances provided by `MessageChannel`. The methods in this library guarantee that each call is either processed or rejected, ensuring no indefinite hangs. In cases where the peer fails to handle the request appropriately or if the request exceeds a specified time limit, a timeout exception is raised on the caller's side.
+`MessagePort` gives you `postMessage` + `onmessage` and nothing else. In
+practice you almost always want more:
 
-In addition to these fundamental calling functionalities, the library includes an implementation of asynchronous iterators. Clients can send, and servers can handle, asynchronous iterators, serving as a foundation for bidirectional communication using `AsyncIterators`.
+- **A request/response pattern** so callers get answers (or timeouts)
+  for each call they make.
+- **Async-iterator transport** so streams of values flow from one side
+  to the other with proper `{done, value, error}` semantics.
+- **Multiplexing** over a single port — several concurrent logical
+  "channels" sharing one `MessageChannel`, distinguished by a
+  `channelName` tag.
+- **Bidirectional calls**: the caller both sends *and* receives a stream
+  in a single logical invocation.
 
-High-level methods to perform individual calls over `MessagePort` instances:
-* [callPort](#callport-method) - implements asynchronious port calls with timeouts; (see the `listenPort` method)
-* [listenPort](#listenport-method) - listens the specified port and delegates calls to  the registered handler; the methods are handled asynchronously and results delivered to the caller (see the `callPort` method)
+This package bundles those four patterns as small composable functions.
+Nothing else depends on them — no HTTP, no ServiceWorker, no Workers — so
+it's the narrow waist any higher-level MessagePort protocol can build on.
 
-Example: call a remote peer and recieve the result
-```js
+## How to use
+
+```sh
+npm install @statewalker/webrun-ports
+```
+
+Every function takes a standard DOM `MessagePort` (both ends of a
+`new MessageChannel()`, the port a `Worker` exposes, anything that
+implements `postMessage` + `addEventListener("message", …)`). Remember
+to call `.start()` on manually-constructed ports before use.
+
+| Export | Layer | Purpose |
+| --- | --- | --- |
+| `callPort(port, params, opts?)` | request/response | Sends `params`, waits for a matching reply, rejects on timeout |
+| `listenPort(port, handler, opts?)` | request/response | Registers `handler` as the server; returns a cleanup fn |
+| `sendIterator(send, iterable)` | stream, transport-agnostic | Drains an iterable into `{done, value, error}` chunks |
+| `recieveIterator(installer)` | stream, transport-agnostic | Rebuilds an async iterator from incoming chunk callbacks |
+| `send(port, output, opts?)` | stream over port | `sendIterator` bound to `callPort` |
+| `recieve(port, opts?)` | stream over port | Async generator of async generators — one per inbound stream |
+| `ioSend(port, output, opts?)` | bidirectional | Send `output` while yielding what the peer sends back |
+| `ioHandle(port, handler, opts?)` | bidirectional | Server half of `ioSend` |
+| `callBidi(port, input, args?)` | high-level bidi | Allocates a sub-channel and wires `ioSend` through it |
+| `listenBidi(port, action, accept?)` | high-level bidi | Server half of `callBidi` |
+| `serializeError` / `deserializeError` | errors | Ship `Error` objects over `postMessage` and reconstruct them |
+| `newAsyncGenerator` | internal, re-exported | Backpressure-aware async generator used by `recieveIterator` |
+
+## Examples
+
+### Request / response
+
+```ts
+import { callPort, listenPort } from "@statewalker/webrun-ports";
+
 const channel = new MessageChannel();
 channel.port1.start();
 channel.port2.start();
-const close = listenPort(channel.port1, async (params) => {
-  return {
-    message: "Hello World!",
-    params
-  }
-});
+
+const close = listenPort(channel.port1, async (params) => ({
+  message: "Hello World!",
+  params,
+}));
+
 try {
   const result = await callPort(channel.port2, { foo: "bar" });
-  console.log(result);
-  // Output:
-  // { message: 'Hello World!', params: { foo: 'bar' } }
+  //         { message: "Hello World!", params: { foo: "bar" } }
 } finally {
   close();
 }
 ```
 
-Hig-level methods to call `AsyncGenerator` functions with `AsyncIterator` as parameters:
-* [callBidi](#callbidi-method) - This method calls the peer handler over a port with a stream of input values and it returns the stream of resulting values
-* [listenBidi](#listenport-method) - Listens for entering requests and delegates calls to the given method to handle input streams; the resulting stream of values is retuned by the handler method is returned to the caller over the same port.
+Timeouts default to **1000 ms**. Server errors are serialised and rethrown
+on the caller's side as `Error` instances — stack and custom fields
+preserved.
 
-Example: 
-```js
-const channel = new MessageChannel();
-channel.port1.start();
-channel.port2.start();
+### Multiplexing with `channelName`
 
-// The "server-side" handler transforming input stream 
-// to a sequence of output values:
-async function* handler(input, params) {
-  for await (let value of input) {
-    yield value.toUpperCase();
-  }
+```ts
+const closeA = listenPort(port1, async () => "A", { channelName: "a" });
+const closeB = listenPort(port1, async () => "B", { channelName: "b" });
+
+await callPort(port2, {}, { channelName: "a" }); // → "A"
+await callPort(port2, {}, { channelName: "b" }); // → "B"
+```
+
+Both listeners share the same physical port; messages are routed by the
+`channelName` tag attached to every envelope.
+
+### Streaming values
+
+```ts
+import { recieve, send } from "@statewalker/webrun-ports";
+
+// Producer side.
+void send(channel.port2, ["hello", "world"]);
+
+// Consumer side: the outer loop yields once per inbound stream.
+for await (const input of recieve<string>(channel.port1)) {
+  for await (const value of input) console.log(value); // "hello", "world"
+  break;
 }
-// Registration of the server-side handler:
-const close = listenBidi(channel.port1, handler);
+```
+
+### Full-duplex (callBidi / listenBidi)
+
+```ts
+import { callBidi, listenBidi } from "@statewalker/webrun-ports";
+
+const close = listenBidi<string, string>(
+  channel.port1,
+  async function* handler(input, params) {
+    for await (const value of input) yield value.toUpperCase();
+  },
+);
+
 try {
-  // Input values.
-  // It could be an AsyncIterator instead.
-  const input = ["Hello", "World"]; 
-  const params = { foo: 'Bar' };
-  for await (let value of callBidi(
-    channel.port2, 
-    input, 
-    params
+  for await (const v of callBidi<string, string>(
+    channel.port2,
+    ["Hello", "World"],
+    { foo: "Bar" },
   )) {
-    console.log('* ', value);
+    console.log(v); // "HELLO", then "WORLD"
   }
 } finally {
   close();
 }
-// Output:
-// *  HELLO
-// *  WORLD
 ```
 
-`AsyncIterator`s over `MessagePort`s:
-* [recieve](#recieve-method) - transforms a sequence of calls to the specified port to an AsyncIterator; Internally uses the `recieveIterator` method. On the other side the the `send` method used to send an iterator. 
-* [send](#send-method) - sends the specified async iterator over the specified port; Internally uses the `sendIterator` method. On the other side the `recieve` method handles calls. 
+`callBidi` generates a fresh `channelName` per invocation, so many
+concurrent bidi streams can share one `MessagePort` without interfering.
 
+## Internals
 
-Utility methods, without dependencies on `MessagePort`s:
-* [errors](src/#errors) - contains serializeError/deserializeError methods transforming exceptions in JSON objects and restoring them back as Error instances 
-* [recieveIterator](#recieveiterator-method) - an adaptor method allowing to transform a sequence of calls to the `onMessage` method to an async iterator 
-* [sendIterator](#senditerator-method) - an utility method transforming an iterator to a sequence of calls to the registered handler.
+### Wire format
 
-Other files:
-* `index.j` the main entry point for the library; re-exports all defined methods
+Every message is a plain object with a discriminated `type`. Envelopes
+carry a `channelName` (string, `""` by default) and a `callId`:
 
-## API
+```
+request :  { type: "request",          channelName, callId, params }
+result  :  { type: "response:result",  channelName, callId, result }
+error   :  { type: "response:error",   channelName, callId, error }    // serialised
+```
 
-### `callBidi` method
+Listeners filter on `channelName`; callers additionally match `callId`
+against a map of pending promises. Unknown messages are ignored silently
+so multiple protocols can coexist on one port.
 
-This method calls the peer handler over a port with a stream of input values and it returns the stream of resulting values.
+### Timeouts
 
-Parameters:
+`callPort` arms a `setTimeout` per call. When it fires, the pending
+promise rejects with `Error("Call timeout. CallId: …")` and the
+listener is detached. This is the only back-pressure signal at the
+request/response layer — anything slower than the timeout is simply
+aborted.
 
-* `port` - a `MessagePort` instance used to transmit the messages
-* `input` - The input to send to the peer; an `AsyncIterator` instance.
- * `args` - The arguments object containing call parameters.
- * `args.options` - The call options like:
-   - `bidiTimeout` - The timeout of the stream to recieve; by default it is 2147483647 (max integer).
-   - `timeout` - The timeout of invidual calls (1000 ms by default); used to send each individual stream value.
- * `args.params` - Additional call parameters used by peers to handle calls; it could contain some parameters like method name; the peer side will recieve in parameters the generated `channelName` value.
+### Streaming layer
 
-Returns an `AsyncIterator` that yields the resulting values retured by the peer.
+`sendIterator` converts a `for-await` iterator into a chain of per-chunk
+"send" calls. On the receive side `recieveIterator` installs a callback
+that forwards each `{done, value, error}` chunk into `newAsyncGenerator`,
+which provides backpressure (every `next(value)` returns
+`Promise<boolean>` indicating whether the consumer is still listening).
 
-### `callPort` method
+The streaming helpers don't re-use the `callPort` timeout for individual
+chunk round-trips by default — you pass a small `timeout` for per-chunk
+acknowledgement and a much larger `bidiTimeout` for the outer stream.
 
-This function calls the specified port with the given payload.
-- `port`: The name of the port to call.
-- `payload`: The payload to send to the port.
-Returns a promise that resolves when the port call is complete.
+### Bidi sub-channels
 
-## errors
+`callBidi` generates a random numeric `channelName`, fires a normal
+`callPort` with that name as part of `params`, and then runs `ioSend`
+on the same `channelName`. The server-side `listenBidi` inspects the
+announced `channelName`, optionally calls an `accept` predicate, and
+invokes `ioHandle` on that name.
 
-This file contains the following methods:
+The outer `callPort` promise acts as the completion signal: when the
+server's handler finishes, it returns (via the wrapping
+`listenPort`) and the caller's outer call resolves.
 
-#### `serializeError(error)` method
+### Design notes
 
-This method takes an error object and transforms it into a JSON object.
+- **Copy, don't depend.** `newAsyncGenerator` is inlined rather than
+  imported from a shared utils package. Keeps the dependency graph at
+  zero runtime deps.
+- **British/American spelling kept.** Function names use `recieve` (the
+  misspelling from the original API) to avoid breaking consumers that
+  already import `recieve` / `recieveIterator`.
+- **`start()` on manual `MessagePort`s.** DOM `MessagePort`s start in a
+  paused state unless created via `onmessage` binding. Tests and helpers
+  call `.start()` explicitly.
 
-#### `deserializeError(json)` method
+### Constraints
 
-This method takes a JSON object representing an error and restores it back as an Error instance.
+- **Node.js ≥ 20** for `MessageChannel` / `MessagePort` with `addEventListener`
+  (Node's `worker_threads` `MessagePort` implements `EventTarget`).
+- **Browser `MessagePort` / `Worker` / `ServiceWorker`** — everything else
+  implementing `postMessage` and `addEventListener("message")` works.
+- **One `listenPort` per `(port, channelName)`**. Multiple listeners on
+  the same channel name compete for the same messages; call cleanup
+  returned from each `listenPort` to detach.
 
-### `listenBidi` method
+### Dependencies
 
-Listens for entering requests and delegates calls to the given method to handle input streams; the resulting stream of values is retuned by the handler method is returned to the caller over the same port.
+**Zero runtime dependencies.** Depends only on platform builtins
+(`MessageChannel`, `Error`, `Promise`, `setTimeout`).
 
-Parameters:
- * `port` - a `MessagePort` sending/recieving messages
- * `action` - an `AsyncGenerator` instance recieving an `AsyncIterator` with input values and yielding a stream of restuls returned to the caller
- * `accept` - the function allowing to accept/reject the initial call based on recieved parameters.
+Dev dependencies: TypeScript, vitest, rolldown, rimraf, `@types/node`
+(catalog versions from the monorepo root).
 
- It returns a method allowing to remove the registered call handler.
+## Scripts
 
-### `listenPort` method
-
-This function listens to the specified port and delegates calls to the registered handler. The methods are handled asynchronously and results are delivered to the caller.
-
-- `port`: The name of the port to listen to.
-- `handler`: The handler function that will be called when a method is invoked on the port.
-
-### `recieveIterator` method
-
-This function transforms a sequence of received messages from a specified port into an asynchronous iterator.
-
-- `port`: The port number to listen to.
-- `options`: Additional options for receiving messages (optional).
-
-Returns an asynchronous generator that yields received messages.
-
-### `send` method
-
-Sends data from an async iterator to a specified port.
-
-- `port`: The port to send the data to.
-- `output`: The data to send.
-- `options`: Additional options for sending the data.
-
-Returns a promise that resolves when the data is received.
-
-### `sendIterator` method
-
-Sends values from an iterator to a specified function.
-
-- `send`: The function sending values to the remote handlers.
-- `it`: The iterator to send values from.
-
-Returns a promise that resolves when the iterator is fully consumed.
+```sh
+pnpm test        # vitest run
+pnpm run build   # rolldown + tsc --emitDeclarationOnly
+pnpm lint        # biome check src tests
+```
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
-
+MIT © statewalker
