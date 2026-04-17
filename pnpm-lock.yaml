@@ -66,6 +66,18 @@ importers:
         specifier: 'catalog:'
         version: 4.1.4(@types/node@24.12.2)(@vitest/coverage-v8@4.1.4)(vite@8.0.8(@types/node@24.12.2)(esbuild@0.27.7)(tsx@4.21.0))
 
+  apps/site-builder-demo:
+    dependencies:
+      '@statewalker/webrun-files-mem':
+        specifier: 'catalog:'
+        version: 0.7.2
+      '@statewalker/webrun-http-browser':
+        specifier: workspace:*
+        version: link:../../packages/webrun-http-browser
+      '@statewalker/webrun-site-builder':
+        specifier: workspace:*
+        version: link:../../packages/webrun-site-builder
+
   packages/webrun-http:
     dependencies:
       '@statewalker/webrun-streams':
