@@ -51,6 +51,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@statewalker/webrun-http": "workspace:*",
     "idb-keyval": "^6.2.1"
   },
   "devDependencies": {

@@ -1,8 +1,8 @@
+import { fromReadableStream, toReadableStream } from "@statewalker/webrun-http";
 import { describe, expect, it } from "vitest";
 import type { MessageTarget } from "../src/core/message-target.js";
 import { newRegistry } from "../src/core/registry.js";
 import { handleHttpRequests, sendHttpRequest } from "../src/http/http-send-recieve.js";
-import { fromReadableStream, toReadableStream } from "../src/http/readable-streams.js";
 
 function asTarget(port: MessagePort): MessageTarget {
   return port as unknown as MessageTarget;

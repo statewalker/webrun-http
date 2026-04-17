@@ -1,5 +1,3 @@
-import { handleStreams, sendStream } from "../core/data-channels.js";
-import type { MessageTarget } from "../core/message-target.js";
 import {
   type HttpHandler,
   newHttpClientStub,
@@ -7,7 +5,9 @@ import {
   type SerializedHttpEnvelope,
   type SerializedHttpRequest,
   type SerializedHttpResponse,
-} from "./http-stubs.js";
+} from "@statewalker/webrun-http";
+import { handleStreams, sendStream } from "../core/data-channels.js";
+import type { MessageTarget } from "../core/message-target.js";
 
 type AnyEnvelope = SerializedHttpEnvelope<SerializedHttpRequest | SerializedHttpResponse>;
 

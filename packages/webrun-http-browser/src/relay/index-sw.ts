@@ -1,7 +1,7 @@
+import { HttpError } from "@statewalker/webrun-http";
 import { get, set } from "idb-keyval";
 import { callChannel, handleChannelCalls } from "../core/data-calls.js";
 import { newRegistry } from "../core/registry.js";
-import { HttpError } from "../http/http-error.js";
 import { sendHttpRequest } from "../http/http-send-recieve.js";
 import { splitServiceUrl } from "./split-service-url.js";
 

@@ -1,8 +1,8 @@
+import type { HttpHandler } from "@statewalker/webrun-http";
 import { callChannel, handleChannelCalls } from "../core/data-calls.js";
 import type { MessageTarget } from "../core/message-target.js";
 import { newRegistry } from "../core/registry.js";
 import { handleHttpRequests, sendHttpRequest } from "../http/http-send-recieve.js";
-import type { HttpHandler } from "../http/http-stubs.js";
 
 export * from "./split-service-url.js";
 
