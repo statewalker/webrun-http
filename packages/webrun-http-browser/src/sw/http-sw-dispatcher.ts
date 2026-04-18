@@ -82,19 +82,11 @@ export class SwHttpDispatcher extends SwPortDispatcher {
               return await sendHttpRequest(channelInfo.port, request);
             }
           }
-          return await fetch(
-            new Request(requestUrl, {
-              method: request.method,
-              headers: request.headers,
-              body: request.body,
-              referrer: request.referrer,
-              referrerPolicy: request.referrerPolicy,
-              credentials: request.credentials,
-              cache: request.cache,
-              redirect: request.redirect,
-              integrity: request.integrity,
-            }),
-          );
+          // Pass the event's Request straight through. Reconstructing it with
+          // `new Request(url, init)` drops `mode`, which makes the constructor
+          // throw `'only-if-cached' can be set only with 'same-origin' mode`
+          // for navigation-style requests Chrome issues with that cache mode.
+          return await fetch(request);
         } catch (error) {
           console.error(error);
           return new Response(null, {
