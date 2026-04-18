@@ -63,7 +63,9 @@ webrun-streams        (foundation — iterator + stream + error primitives)
     │       └── webrun-rpc-http       (service-RPC on top of webrun-http)
     │
     ├── webrun-site-builder       (files + endpoints + auth → (Request)⇒Response)
-    │       (peer: @statewalker/webrun-files for the FilesApi interface)
+    │       ▲
+    │       └── webrun-site-host  (SiteBuilder + SwHttpAdapter wired up in one call)
+    │           (peer: @statewalker/webrun-files for the FilesApi interface)
     │
     └── (all of the above use webrun-streams for chunks + errors)
 ```
@@ -192,6 +194,29 @@ a small MIME map, `Range`/`HEAD` support driven by
 `FilesApi.stats()` + `read({start, length})`. Zero runtime deps
 beyond a peer `@statewalker/webrun-files`.
 
+### [`@statewalker/webrun-site-host`](./packages/webrun-site-host)
+
+**One-call in-browser hosting** for a `webrun-site-builder` site.
+`HostedSiteBuilder` wraps `SiteBuilder` + `SwHttpAdapter` into a
+single fluent API — you register files, endpoints, and auth hooks the
+same way, and `.build()` takes care of the SW registration, URL
+rewriting, and routing under a site key:
+
+```ts
+const site = await new HostedSiteBuilder()
+  .setSiteKey("demo")
+  .setFiles("/client", clientFiles)
+  .setFiles("/server", serverFiles)
+  .setServerRunner("/api", "/server/api/index.js")
+  .build();
+// site.baseUrl   → http://localhost:5173/demo/
+// site.stop()    unhooks the handler
+```
+
+`setServerRunner(pattern, modulePath)` inlines the common pattern of
+"the `/api` endpoint is a JS module served by my own site" — the
+builder generates a dynamic-import endpoint under the hood.
+
 ## Putting it together
 
 The packages are designed to compose into end-to-end stacks. A few
@@ -202,6 +227,7 @@ concrete combinations:
 | In-browser service RPC with offline-capable `fetch()` | `webrun-rpc-http` + `webrun-http-browser` (same-origin mode) + `webrun-http` |
 | Cross-origin RPC from an embed (Observable, unpkg) | `webrun-rpc-http` + `webrun-http-browser` (relay mode) + `webrun-http` |
 | Static site + dynamic API + auth, served from anywhere | `webrun-site-builder` + any `FilesApi` + a transport of your choice |
+| In-browser static site + dynamic API with zero SW boilerplate | `webrun-site-host` — wraps the builder + the SW adapter in one `.build()` call |
 | Node ↔ browser RPC over a WebSocket | `webrun-ports` + `webrun-ports-ws` on each end; optionally pipe `webrun-http` through for `Request`/`Response` semantics |
 | Unit tests for an RPC service | `webrun-rpc-http` with `fetch: (req) => handler(req)` — no network at all |
 | Deploying the same handler to a real edge runtime | `webrun-rpc-http` handler drops straight into Deno / Cloudflare Workers / Bun |

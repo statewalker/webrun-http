@@ -18,6 +18,7 @@
       "@statewalker/webrun-ports-ws": ["./packages/webrun-ports-ws/src"],
       "@statewalker/webrun-rpc-http": ["./packages/webrun-rpc-http/src"],
       "@statewalker/webrun-site-builder": ["./packages/webrun-site-builder/src"],
+      "@statewalker/webrun-site-host": ["./packages/webrun-site-host/src"],
       "@statewalker/webrun-streams": ["./packages/webrun-streams/src"]
     }
   }
