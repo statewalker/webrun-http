@@ -217,6 +217,18 @@ const site = await new HostedSiteBuilder()
 "the `/api` endpoint is a JS module served by my own site" — the
 builder generates a dynamic-import endpoint under the hood.
 
+## Runnable demos
+
+| Demo | Path | What it shows |
+| --- | --- | --- |
+| **site-builder-demo** | [`apps/site-builder-demo`](./apps/site-builder-demo) | Vite + TypeScript app; `HostedSiteBuilder` mounts a full site (static client + `/api` dynamic-import endpoint + iframe preview) in ~40 lines. Highest-level wrapping; server-side code is a JS file served by the site itself. |
+| Hono dynamic site | [`packages/webrun-http-browser/demo/demo-1.html`](./packages/webrun-http-browser/demo/demo-1.html) | A Hono router running in the browser as the back-end for a relay-SW-hosted site. Demonstrates relay mode + full-framework compatibility. |
+| Local-disk file server | [`packages/webrun-http-browser/demo/demo-2.html`](./packages/webrun-http-browser/demo/demo-2.html) | User picks a folder via `showDirectoryPicker`; the relay SW exposes its contents as a browsable in-browser HTTP site. ~20-line handler. |
+| Minimal same-origin SW | [`packages/webrun-http-browser/public/index.html`](./packages/webrun-http-browser/public/index.html) | The unwrapped `SwHttpAdapter` pattern, ~40 lines of inline JS. Good baseline for debugging the SW lifecycle. |
+
+Each demo has a "Why it's interesting" blurb in its neighbouring
+README or inside the relevant package README.
+
 ## Putting it together
 
 The packages are designed to compose into end-to-end stacks. A few

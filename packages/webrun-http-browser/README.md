@@ -124,7 +124,7 @@ The working example lives in [`public/`](./public).
 ### Running the bundled examples
 
 ```sh
-pnpm run example:same-origin   # public/index.html    — sw/ mode demo
+pnpm run example:same-origin   # public/index.html    — same-origin SW demo
 pnpm run example:relay-site    # demo/demo-1.html     — relay + Hono dynamic site
 pnpm run example:relay-files   # demo/demo-2.html     — relay + local-disk file server
 pnpm run serve                 # just a static server on :5173 (no auto-open)
@@ -134,6 +134,80 @@ Each `example:*` script builds first, starts a static server on `:5173`,
 then opens the target page in the default browser. ServiceWorkers only
 register over `http://localhost` or HTTPS, so always visit through
 `http://localhost:5173/…` — `file://` won't work.
+
+#### [`public/index.html`](./public/index.html) — minimal same-origin SW
+
+The smallest possible in-browser HTTP server. The page registers
+`public/sw-worker.js` (which `importScripts`es the shipped
+`dist/sw-worker.js`), constructs a `SwHttpAdapter` with key `"demo"`,
+and registers a single handler at `demo/api/` that returns JSON. The
+page then makes a standard `fetch(baseUrl + "anything")` and logs the
+result.
+
+Why it's interesting:
+
+- **No framework, no glue, ~40 lines of inline JS.** This is the
+  unwrapped pattern — everything
+  [`@statewalker/webrun-site-host`](../webrun-site-host) and
+  [`@statewalker/webrun-site-builder`](../webrun-site-builder) build on
+  top of. Useful as a reference for exactly what the SW lifecycle
+  looks like at its lowest level.
+- **Shows the SW-routing contract.** The adapter's `key: "demo"` is
+  the first URL segment the SW uses to find this page's registration;
+  `adapter.register(\`${KEY}/api/\`, ...)` mounts the handler prefix
+  under the same key. The mapping is visible and inspectable — great
+  for debugging your own SW-based code.
+
+#### [`demo/demo-1.html`](./demo/demo-1.html) — relay + Hono dynamic site
+
+A full-blown mini web site running in a single tab, behind the
+**relay** ServiceWorker. The page spins up a Hono router with a
+`/api/:name` endpoint and a static-file catch-all, registers it as
+service `MY_SITE`, and embeds the service root in an iframe. Inside
+the iframe, typing into an input fires `fetch("./api/" + name)` and
+renders the JSON response — the whole back-end is the Hono app
+running in the outer tab.
+
+Why it's interesting:
+
+- **An entire web framework running client-side.** Hono is a normal
+  Node/Deno/CF-Workers framework — here it's loaded from esm.sh and
+  mounted inside the browser with no server involvement. The
+  `(Request) ⇒ Response` contract makes this transparent.
+- **Relay mode = cross-origin friendly.** Because the SW lives at the
+  relay origin (not the page's origin), this pattern also works when
+  your page is served from Observable, unpkg, a notebook, or a static
+  `file://` — places where registering your own SW isn't possible.
+  The hidden relay iframe does the SW registration on your behalf.
+- **Two ways to call the service.** The iframe uses plain `fetch()`
+  through the SW; any other browser tab pointing at
+  `<relay-origin>/~MY_SITE/...` is also routed to this tab's Hono
+  app. Demonstrates that the page hosting the handler and the caller
+  don't have to share an origin.
+
+#### [`demo/demo-2.html`](./demo/demo-2.html) — FS Access API folder as a site
+
+Click **Open folder**, grant read access, and any directory on your
+local disk is exposed as an in-browser HTTP site under
+`<relay-origin>/~FS/…`. The left panel shows a live file tree; clicking
+a file loads it in the iframe preview. The service handler is a ~20-line
+function that resolves paths via
+[`FileSystemDirectoryHandle.getFileHandle`](https://developer.mozilla.org/docs/Web/API/FileSystemDirectoryHandle/getFileHandle)
+and streams the file's bytes back through the SW.
+
+Why it's interesting:
+
+- **Zero installs, real files.** Browse arbitrary directories as if
+  they were hosted — open a local project's `index.html` and it just
+  runs. Relative URLs inside the hosted files resolve correctly because
+  the SW serves every asset, CSS, and JS under the same origin.
+- **Permissioned + sandboxed.** The browser's File System Access API
+  provides the "backend" (read permission granted per-folder by the
+  user); the relay SW provides the "network". You get the ergonomics
+  of a local HTTP dev server without running one.
+- **Directory picker + request router in <100 lines.** No build step,
+  no tooling. Shows how small the glue between a platform API and a
+  webrun-http handler can be.
 
 ## Internals
 
