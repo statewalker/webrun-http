@@ -81,11 +81,25 @@ export class SwHttpDispatcher extends SwPortDispatcher {
             if (channelInfo?.port) {
               return await sendHttpRequest(channelInfo.port, request);
             }
+            // Key was registered at some point on this SW but has no live
+            // handler right now (owner tab closed). Return 404 instead of
+            // falling through to the network — the alternative (a dev
+            // server's SPA fallback) serves the app shell for every site
+            // URL and creates a confusing refresh-loop where stale tabs
+            // keep resurrecting registrations.
+            if (this.isClaimedKey(key)) {
+              return new Response(null, {
+                status: 404,
+                statusText: "Not Found (no active handler)",
+              });
+            }
           }
-          // Pass the event's Request straight through. Reconstructing it with
-          // `new Request(url, init)` drops `mode`, which makes the constructor
-          // throw `'only-if-cached' can be set only with 'same-origin' mode`
-          // for navigation-style requests Chrome issues with that cache mode.
+          // URL is outside scope, or the first segment is unrelated to any
+          // registered site (Vite's /assets/*, /favicon.ico, etc.) — pass
+          // the event's Request straight through. Reconstructing it drops
+          // `mode`, which makes the constructor throw
+          // `'only-if-cached' can be set only with 'same-origin' mode` for
+          // navigation-style requests Chrome issues with that cache mode.
           return await fetch(request);
         } catch (error) {
           console.error(error);

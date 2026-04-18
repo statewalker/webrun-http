@@ -168,6 +168,13 @@ export class SwPortDispatcher {
   readonly self: ServiceWorkerGlobalScope;
   readonly log: (...args: unknown[]) => void;
   readonly handlersIndex = new Map<string, ChannelInfo>();
+  /**
+   * Set of keys that were registered at some point on this SW (sticky —
+   * survives client closures + SW wake-ups via IndexedDB). Lets the fetch
+   * handler distinguish "site URL whose owner is gone → 404" from
+   * "unknown URL under scope → pass through to the network".
+   */
+  readonly claimedKeys = new Set<string>();
   private _cleanup?: () => void;
   private _activationPromise?: Promise<void>;
 
@@ -180,6 +187,11 @@ export class SwPortDispatcher {
     return `${new URL("./", this.self.location.href)}`;
   }
 
+  /**
+   * Look up the active channel for a key. Returns `undefined` when there
+   * is no registration (or the registering client has gone away — stale
+   * entries are pruned in place).
+   */
   async loadChannelInfo(key: string): Promise<ChannelInfo | undefined> {
     await this._checkActivation();
     for (const channelInfo of this.handlersIndex.values()) {
@@ -188,12 +200,19 @@ export class SwPortDispatcher {
       if (!clientId) continue;
       const client = await this.self.clients.get(clientId);
       if (!client) {
+        // Owner tab closed: drop the stale entry and keep scanning for
+        // another client that still claims this key.
         this.handlersIndex.delete(clientId);
-        throw Object.assign(new Error("Error 410: Resource Gone"), { status: 410 });
+        continue;
       }
       return channelInfo;
     }
     return undefined;
+  }
+
+  /** Whether `key` has ever been registered on this SW. */
+  isClaimedKey(key: string): boolean {
+    return this.claimedKeys.has(key);
   }
 
   start(): void {
@@ -259,10 +278,16 @@ export class SwPortDispatcher {
     this.log("[updateClientInfo]", channelInfo);
     if (!channelInfo.clientId) return;
     this.handlersIndex.set(channelInfo.clientId, channelInfo);
+    if (channelInfo.key && !this.claimedKeys.has(channelInfo.key)) {
+      this.claimedKeys.add(channelInfo.key);
+      await set("claimedKeys", [...this.claimedKeys].sort());
+    }
     await this._updateClientIds([]);
   }
 
   private async _loadClientIds(): Promise<Map<string, Client>> {
+    const storedKeys = ((await get<string[]>("claimedKeys")) ?? []) as string[];
+    for (const key of storedKeys) this.claimedKeys.add(key);
     const stored = ((await get<string[]>("clientIds")) ?? []) as string[];
     return await this._updateClientIds(new Set(stored));
   }
